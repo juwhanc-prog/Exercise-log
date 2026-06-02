@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="Workout" />
 <meta name="theme-color" content="#0f1115" />
-<title>Workout</title>
+<title>Workout v18</title>
 <style>
   :root{
     --bg:#0f1115; --card:#171a21; --card2:#202631; --line:#2b3140;
@@ -498,8 +498,43 @@ function removeSetFromExercise(ei){
   saveDraftSoon();
   setMessage('Set removed.');
 }
-function syncFirstSetWeight(exerciseEl,value){ exerciseEl.querySelectorAll('.setrow').forEach(row=>{ if(Number(row.dataset.set)===0)return; if(row.dataset.weightEdited!=='true') row.querySelector('.set-weight').value=value; }); }
-function syncFirstSetReps(exerciseEl,value){ exerciseEl.querySelectorAll('.setrow').forEach(row=>{ if(Number(row.dataset.set)===0)return; if(row.dataset.repsEdited!=='true') row.querySelector('.set-reps').value=value; }); }
+function noteFor(row,kind){
+  const notes=row.querySelectorAll('.miniNote');
+  return kind==='weight'?notes[0]:notes[1];
+}
+function syncFirstSetWeight(exerciseEl,value){
+  exerciseEl.querySelectorAll('.setrow').forEach(row=>{
+    if(Number(row.dataset.set)===0)return;
+    if(row.dataset.weightEdited!=='true'){
+      row.querySelector('.set-weight').value=value;
+      const n=noteFor(row,'weight'); if(n) n.textContent='same weight';
+    }
+  });
+}
+function syncFirstSetReps(exerciseEl,value){
+  exerciseEl.querySelectorAll('.setrow').forEach(row=>{
+    if(Number(row.dataset.set)===0)return;
+    if(row.dataset.repsEdited!=='true'){
+      row.querySelector('.set-reps').value=value;
+      const n=noteFor(row,'reps'); if(n) n.textContent='same reps';
+    }
+  });
+}
+function applySyncFlagsAfterRestore(exerciseEl){
+  const rows=Array.from(exerciseEl.querySelectorAll('.setrow'));
+  if(!rows.length) return;
+  const firstW=rows[0].querySelector('.set-weight')?.value ?? '';
+  const firstR=rows[0].querySelector('.set-reps')?.value ?? '';
+  rows.forEach((row,idx)=>{
+    if(idx===0){ row.dataset.weightEdited='false'; row.dataset.repsEdited='false'; return; }
+    const w=row.querySelector('.set-weight')?.value ?? '';
+    const r=row.querySelector('.set-reps')?.value ?? '';
+    row.dataset.weightEdited = String(w)!==String(firstW) ? 'true' : 'false';
+    row.dataset.repsEdited = String(r)!==String(firstR) ? 'true' : 'false';
+    const wn=noteFor(row,'weight'); if(wn && row.dataset.weightEdited==='false') wn.textContent='same weight';
+    const rn=noteFor(row,'reps'); if(rn && row.dataset.repsEdited==='false') rn.textContent='same reps';
+  });
+}
 
 function moveExercise(ei,dir){
   saveDraft();
@@ -543,9 +578,10 @@ function fillFromLog(log){
     (exObj.sets||[]).forEach((s,si)=>{
       let row=document.querySelector(`.setrow[data-ex="${ei}"][data-set="${si}"]`);
       if(!row){row=addSetToExercise(ei,s.weight,s.reps,!!s.done);}
-      if(row){row.querySelector('.set-weight').value=s.weight; row.querySelector('.set-reps').value=s.reps; row.querySelector('.set-done').checked=!!s.done; row.dataset.weightEdited=si===0?'false':'true'; row.dataset.repsEdited=si===0?'false':'true';}
+      if(row){row.querySelector('.set-weight').value=s.weight; row.querySelector('.set-reps').value=s.reps; row.querySelector('.set-done').checked=!!s.done;}
     });
   });
+  document.querySelectorAll('.exercise').forEach(applySyncFlagsAfterRestore);
   (log.core||[]).forEach((c,ci)=>{ (c.sets||[]).forEach((s,si)=>{ const row=document.querySelector(`.coreRow[data-core="${ci}"][data-set="${si}"]`); if(row){ row.querySelector('.core-target').value=s.target||''; row.querySelector('.core-done').checked=!!s.done; } }); });
 }
 function collectLog(freshId=true){
