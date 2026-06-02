@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="Workout" />
 <meta name="theme-color" content="#0f1115" />
-<title>Workout v18</title>
+<title>Workout v19</title>
 <style>
   :root{
     --bg:#0f1115; --card:#171a21; --card2:#202631; --line:#2b3140;
@@ -26,7 +26,7 @@
   .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin:10px 0;box-shadow:0 10px 28px rgba(0,0,0,.18)}
   label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
   input,select,textarea{width:100%;max-width:100%;background:#0d0f14;border:1px solid var(--line);border-radius:12px;color:var(--text);font-size:16px;padding:11px 12px;outline:none}
-  textarea{min-height:64px;resize:vertical}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;align-items:end}.grid>*,.grid3>*,.grid4>*,.gridCore>*{min-width:0}.grid4{display:grid;grid-template-columns:34px 1fr 1fr 70px;gap:8px;align-items:end}.gridCore{display:grid;grid-template-columns:34px 1fr 70px;gap:8px;align-items:end}
+  textarea{min-height:64px;resize:vertical}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;align-items:end}.grid>*,.grid3>*,.grid4>*,.gridCore>*{min-width:0}.grid4{display:grid;grid-template-columns:34px 1fr 1fr 70px;gap:8px;align-items:end}.gridCore{display:grid;grid-template-columns:34px 1fr 1fr 70px;gap:8px;align-items:end}
   #dateInput{display:block;max-width:220px;margin:0 auto;text-align:center;text-align-last:center}#dateInput+::-webkit-calendar-picker-indicator{margin-left:0}#dateInput{appearance:none;-webkit-appearance:none}#dateInput::-webkit-date-and-time-value{text-align:center}.grid3>div:first-child label{text-align:center}
   .routineStrip{display:flex;gap:7px;overflow:auto;padding:2px 1px 6px;margin-top:10px}.pill{white-space:nowrap;background:#222936;color:var(--muted);border:1px solid var(--line);padding:7px 10px;border-radius:999px;font-size:12px}.pill.on{background:var(--accent);color:#111;font-weight:800;border-color:var(--accent)}
   .hint{font-size:12px;color:var(--muted);line-height:1.45;margin-top:8px}.msg{font-size:13px;margin-top:10px;color:var(--accent2);min-height:18px}.msg.warn{color:var(--warn)}.msg.bad{color:var(--danger)}
@@ -38,7 +38,7 @@
   .coreTitle{display:flex;justify-content:space-between;gap:10px;align-items:center}.coreSkip{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:13px}.coreSkip input{width:auto;transform:scale(1.2)}
   .calendarHead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}.calTitle{font-weight:900}.calGrid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}.dow{font-size:11px;color:var(--muted);text-align:center;padding:4px 0}.day{min-height:42px;border-radius:12px;background:#11151c;border:1px solid var(--line);color:var(--muted);display:flex;align-items:center;justify-content:center;position:relative;font-weight:800}.day.empty{background:transparent;border:0}.day.today{border-color:var(--accent);color:var(--text)}.day.worked{background:#17301f;color:#caffd1;border-color:#2c6c3d}.day.missed{background:#171a21;color:#646d7d}.day.selected{box-shadow:0 0 0 2px var(--accent) inset}.day .dot{position:absolute;bottom:5px;width:5px;height:5px;border-radius:50%;background:var(--accent)}.legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--muted)}.legend span:before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:-1px}.lworked:before{background:#2c6c3d}.lmissed:before{background:#3b4150}.ltoday:before{background:var(--accent)}
   .footerbar{position:fixed;left:0;right:0;bottom:0;background:rgba(15,17,21,.92);backdrop-filter:blur(10px);border-top:1px solid var(--line);padding:10px 14px}.footerbar .inner{max-width:930px;margin:0 auto;display:flex;gap:8px}.footerbar button{flex:1}
-  @media(max-width:700px){.wrap{padding:14px 12px 104px}h1{font-size:24px}.grid,.grid3{grid-template-columns:1fr}.grid4{grid-template-columns:30px 1fr 1fr 56px}.gridCore{grid-template-columns:30px 1fr 56px}.setControlRow{grid-template-columns:1fr}.target{text-align:left}.exhead{display:block}.day{min-height:38px;font-size:13px}.guideGrid{display:block}}
+  @media(max-width:700px){.wrap{padding:14px 12px 104px}h1{font-size:24px}.grid,.grid3{grid-template-columns:1fr}.grid4{grid-template-columns:30px 1fr 1fr 56px}.gridCore{grid-template-columns:30px 1fr 1fr 56px}.setControlRow{grid-template-columns:1fr}.target{text-align:left}.exhead{display:block}.day{min-height:38px;font-size:13px}.guideGrid{display:block}}
 </style>
 </head>
 <body>
@@ -437,9 +437,13 @@ function renderLog(userChangedRoutine=false){
 }
 function renderCore(){
   $('coreList').innerHTML = CORE_DEFAULT.map((exObj,ei)=>{
-    let rows=''; for(let si=0;si<exObj.sets;si++){ rows+=`<div class="coreRow gridCore" data-core="${ei}" data-set="${si}"><div class="setno">${si+1}</div><div><label>Target</label><input class="core-target" value="${esc(exObj.target)}"></div><label class="check"><input class="core-done" type="checkbox"></label></div>`; }
-    return `<div class="exercise coreExercise" data-core-index="${ei}"><div class="exhead"><div><div class="exname">${esc(exObj.name)}</div>${tagLine(exObj.name)}</div><div class="target">${exObj.sets} sets</div></div><button type="button" class="smallbtn ghost coreGuideBtn" data-core="${ei}">Instructions</button><div class="guideBox" id="coreGuide-${ei}">${guideHTML(exObj.name)}</div>${rows}</div>`;
+    let rows=''; for(let si=0;si<exObj.sets;si++){ rows+=coreRowHTML(ei,si,exObj.target,parseCoreReps(exObj.target),false); }
+    return `<div class="exercise coreExercise" data-core-index="${ei}"><div class="exhead"><div><div class="exname">${esc(exObj.name)}</div>${tagLine(exObj.name)}</div><div class="target"><span class="coreSetCount">${exObj.sets}</span> sets</div></div><button type="button" class="smallbtn ghost coreGuideBtn" data-core="${ei}">Instructions</button><div class="guideBox" id="coreGuide-${ei}">${guideHTML(exObj.name)}</div>${rows}<div class="setControlRow"><button type="button" class="smallbtn ghost coreRemoveSetBtn" data-core="${ei}">− Remove core set</button><button type="button" class="smallbtn ghost coreAddSetBtn" data-core="${ei}">+ Add core set</button></div></div>`;
   }).join('');
+}
+function parseCoreReps(target){ const m=String(target||'').match(/\d+/); return m?m[0]:''; }
+function coreRowHTML(ei,si,target='',reps='',done=false){
+  return `<div class="coreRow gridCore" data-core="${ei}" data-set="${si}"><div class="setno">${si+1}</div><div><label>Target</label><input class="core-target" value="${esc(target)}"></div><div><label>Reps / sec</label><input class="core-reps" type="number" inputmode="decimal" value="${esc(reps)}"></div><label class="check"><input class="core-done" type="checkbox" ${done?'checked':''}></label></div>`;
 }
 function renderAddExerciseSelect(routineData){
   const names=Object.keys(EXERCISE_DB).filter(n=>isAppropriateForDay(n,routineData)).sort();
@@ -455,7 +459,9 @@ function bindInputs(){
   $$('.moveUpBtn').forEach(btn=>btn.addEventListener('click',()=>moveExercise(Number(btn.dataset.ex),-1)));
   $$('.moveDownBtn').forEach(btn=>btn.addEventListener('click',()=>moveExercise(Number(btn.dataset.ex),1)));
   $$('.coreGuideBtn').forEach(btn=>btn.addEventListener('click',()=>{$(`coreGuide-${btn.dataset.core}`).classList.toggle('show');}));
-  $$('.core-target,.core-done').forEach(el=>el.addEventListener('input',saveDraftSoon));
+  $$('.coreAddSetBtn').forEach(btn=>btn.addEventListener('click',()=>{addSetToCore(Number(btn.dataset.core)); saveDraftSoon(); enhanceInteractions();}));
+  $$('.coreRemoveSetBtn').forEach(btn=>btn.addEventListener('click',()=>removeSetFromCore(Number(btn.dataset.core))));
+  $$('.core-target,.core-reps,.core-done').forEach(el=>el.addEventListener('input',saveDraftSoon));
   $('skipCoreInput').addEventListener('change',()=>{ $('coreList').style.display=$('skipCoreInput').checked?'none':'block'; saveDraftSoon(); });
   $('notesInput').addEventListener('input',saveDraftSoon);
   enhanceInteractions();
@@ -497,6 +503,33 @@ function removeSetFromExercise(ei){
   renumberSets(exercise);
   saveDraftSoon();
   setMessage('Set removed.');
+}
+function renumberCoreSets(coreEl){
+  coreEl.querySelectorAll('.coreRow').forEach((row,idx)=>{ row.dataset.set=String(idx); const n=row.querySelector('.setno'); if(n) n.textContent=String(idx+1); });
+  const count=coreEl.querySelectorAll('.coreRow').length;
+  const countEl=coreEl.querySelector('.coreSetCount'); if(countEl) countEl.textContent=String(count);
+}
+function addSetToCore(ci, target=null, reps=null, done=false){
+  const coreEl=document.querySelector(`.coreExercise[data-core-index="${ci}"]`); if(!coreEl) return null;
+  const rows=Array.from(coreEl.querySelectorAll('.coreRow')); const first=rows[0]; const si=rows.length;
+  const t=target!==null?target:(first?first.querySelector('.core-target').value:(CORE_DEFAULT[ci]?.target||''));
+  const r=reps!==null?reps:(first?first.querySelector('.core-reps').value:parseCoreReps(t));
+  const controls=coreEl.querySelector('.setControlRow');
+  controls.insertAdjacentHTML('beforebegin',coreRowHTML(ci,si,t,r,!!done));
+  const row=coreEl.querySelector(`.coreRow[data-core="${ci}"][data-set="${si}"]`);
+  row.querySelectorAll('.core-target,.core-reps,.core-done').forEach(el=>el.addEventListener('input',saveDraftSoon));
+  renumberCoreSets(coreEl);
+  setMessage('Core set added.');
+  return row;
+}
+function removeSetFromCore(ci){
+  const coreEl=document.querySelector(`.coreExercise[data-core-index="${ci}"]`); if(!coreEl) return;
+  const rows=Array.from(coreEl.querySelectorAll('.coreRow'));
+  if(rows.length<=1){ setMessage('At least one core set must remain.','warn'); return; }
+  rows[rows.length-1].remove();
+  renumberCoreSets(coreEl);
+  saveDraftSoon();
+  setMessage('Core set removed.');
 }
 function noteFor(row,kind){
   const notes=row.querySelectorAll('.miniNote');
@@ -582,12 +615,12 @@ function fillFromLog(log){
     });
   });
   document.querySelectorAll('.exercise').forEach(applySyncFlagsAfterRestore);
-  (log.core||[]).forEach((c,ci)=>{ (c.sets||[]).forEach((s,si)=>{ const row=document.querySelector(`.coreRow[data-core="${ci}"][data-set="${si}"]`); if(row){ row.querySelector('.core-target').value=s.target||''; row.querySelector('.core-done').checked=!!s.done; } }); });
+  (log.core||[]).forEach((c,ci)=>{ (c.sets||[]).forEach((s,si)=>{ let row=document.querySelector(`.coreRow[data-core="${ci}"][data-set="${si}"]`); if(!row){ row=addSetToCore(ci,s.target||'',s.reps||parseCoreReps(s.target||''),!!s.done); } if(row){ row.querySelector('.core-target').value=s.target||''; row.querySelector('.core-reps').value=s.reps||parseCoreReps(s.target||''); row.querySelector('.core-done').checked=!!s.done; } }); const coreEl=document.querySelector(`.coreExercise[data-core-index="${ci}"]`); if(coreEl) renumberCoreSets(coreEl); });
 }
 function collectLog(freshId=true){
   const p=currentProgram(), routine=$('routineSelect').value, date=$('dateInput').value||localDate(); const routineData=currentRoutines()[routine]||[];
   const exercises=routineData.map((exObj,ei)=>{ const setRows=$$(`.setrow[data-ex="${ei}"]`).map(row=>({weight:num(row.querySelector('.set-weight').value), reps:num(row.querySelector('.set-reps').value), done:row.querySelector('.set-done').checked})); const doneSets=setRows.filter(s=>s.done); const volume=doneSets.reduce((a,s)=>a+s.weight*s.reps,0); const bestWeight=doneSets.length?doneSets.reduce((a,s)=>Math.max(a,s.weight),0):setRows.reduce((a,s)=>Math.max(a,s.weight),0); const bestReps=doneSets.length?doneSets.reduce((a,s)=>Math.max(a,s.reps),0):setRows.reduce((a,s)=>Math.max(a,s.reps),0); return {name:exObj.name,cue:exObj.cue,sets:setRows,volume,bestWeight,bestReps}; });
-  const coreSkipped=$('skipCoreInput').checked; const core=CORE_DEFAULT.map((c,ci)=>({name:c.name,sets:$$(`.coreRow[data-core="${ci}"]`).map(row=>({target:row.querySelector('.core-target').value,done:row.querySelector('.core-done').checked}))}));
+  const coreSkipped=$('skipCoreInput').checked; const core=CORE_DEFAULT.map((c,ci)=>({name:c.name,sets:$$(`.coreRow[data-core="${ci}"]`).map(row=>({target:row.querySelector('.core-target').value,reps:num(row.querySelector('.core-reps')?.value),done:row.querySelector('.core-done').checked}))}));
   const totalVolume=exercises.reduce((a,e)=>a+(e.volume||0),0); const totalSets=exercises.reduce((a,e)=>a+(e.sets||[]).filter(s=>s.done).length,0);
   return {id:freshId?Date.now():0, date, program:p, routine, exercises, coreSkipped, core, notes:$('notesInput').value.trim(), totalVolume, totalSets};
 }
