@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="Workout" />
 <meta name="theme-color" content="#0f1115" />
-<title>Workout v19</title>
+<title>Workout v20</title>
 <style>
   :root{
     --bg:#0f1115; --card:#171a21; --card2:#202631; --line:#2b3140;
@@ -245,15 +245,42 @@ const CORE_DEFAULT = [
 const LS = "juwhan_workout_logs_v8";
 const PROGRAMS_KEY = "juwhan_programs_v12";
 const DRAFT = "juwhan_workout_draft_v12";
+const CORE_KEY = "juwhan_core_template_v20";
 const $ = id => document.getElementById(id);
 const $$ = sel => Array.from(document.querySelectorAll(sel));
 let calDate = new Date();
 let draftTimer = null;
 let programs = loadPrograms();
+let coreTemplate = loadCoreTemplate();
 
 function clone(o){ return JSON.parse(JSON.stringify(o)); }
 function loadPrograms(){ try{return JSON.parse(localStorage.getItem(PROGRAMS_KEY)||"") || clone(DEFAULT_PROGRAMS);}catch(e){return clone(DEFAULT_PROGRAMS);} }
 function savePrograms(){ localStorage.setItem(PROGRAMS_KEY, JSON.stringify(programs)); }
+function loadCoreTemplate(){
+  try{
+    const saved = JSON.parse(localStorage.getItem(CORE_KEY)||"null");
+    if(Array.isArray(saved) && saved.length) return saved;
+  }catch(e){}
+  return clone(CORE_DEFAULT);
+}
+function saveCoreTemplate(){
+  try{ localStorage.setItem(CORE_KEY, JSON.stringify(coreTemplate)); }catch(e){}
+}
+function updateCoreTemplateFromUI(){
+  const next = [];
+  $$('.coreExercise').forEach((coreEl,ci)=>{
+    const base = coreTemplate[ci] || CORE_DEFAULT[ci] || {name:`Core ${ci+1}`, target:""};
+    const rows = Array.from(coreEl.querySelectorAll('.coreRow'));
+    const first = rows[0];
+    next[ci] = {
+      name: base.name,
+      sets: Math.max(1, rows.length || base.sets || 1),
+      target: first ? (first.querySelector('.core-target')?.value || base.target || '') : (base.target || ''),
+      reps: first ? num(first.querySelector('.core-reps')?.value) : (base.reps || parseCoreReps(base.target || ''))
+    };
+  });
+  if(next.length){ coreTemplate = next; saveCoreTemplate(); }
+}
 function resetProgram(name){ if(!DEFAULT_PROGRAMS[name]) return false; programs[name]=clone(DEFAULT_PROGRAMS[name]); savePrograms(); return true; }
 function localDate(d=new Date()){ const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; }
 function parseDate(s){ const [y,m,d]=String(s).split('-').map(Number); return new Date(y,m-1,d); }
@@ -436,14 +463,15 @@ function renderLog(userChangedRoutine=false){
   updateHeaderLine();
 }
 function renderCore(){
-  $('coreList').innerHTML = CORE_DEFAULT.map((exObj,ei)=>{
-    let rows=''; for(let si=0;si<exObj.sets;si++){ rows+=coreRowHTML(ei,si,exObj.target,parseCoreReps(exObj.target),false); }
-    return `<div class="exercise coreExercise" data-core-index="${ei}"><div class="exhead"><div><div class="exname">${esc(exObj.name)}</div>${tagLine(exObj.name)}</div><div class="target"><span class="coreSetCount">${exObj.sets}</span> sets</div></div><button type="button" class="smallbtn ghost coreGuideBtn" data-core="${ei}">Instructions</button><div class="guideBox" id="coreGuide-${ei}">${guideHTML(exObj.name)}</div>${rows}<div class="setControlRow"><button type="button" class="smallbtn ghost coreRemoveSetBtn" data-core="${ei}">− Remove core set</button><button type="button" class="smallbtn ghost coreAddSetBtn" data-core="${ei}">+ Add core set</button></div></div>`;
+  $('coreList').innerHTML = coreTemplate.map((exObj,ei)=>{
+    const baseReps = exObj.reps || parseCoreReps(exObj.target);
+    let rows=''; for(let si=0;si<exObj.sets;si++){ rows+=coreRowHTML(ei,si,exObj.target,baseReps,false); }
+    return `<div class="exercise coreExercise" data-core-index="${ei}"><div class="exhead"><div><div class="exname">${esc(exObj.name)}</div>${tagLine(exObj.name)}</div><div class="target"><span class="coreSetCount">${exObj.sets}</span> sets · base ${esc(exObj.target||baseReps||'')}</div></div><button type="button" class="smallbtn ghost coreGuideBtn" data-core="${ei}">Instructions</button><div class="guideBox" id="coreGuide-${ei}">${guideHTML(exObj.name)}</div>${rows}<div class="setControlRow"><button type="button" class="smallbtn ghost coreRemoveSetBtn" data-core="${ei}">− Remove core set</button><button type="button" class="smallbtn ghost coreAddSetBtn" data-core="${ei}">+ Add core set</button></div></div>`;
   }).join('');
 }
 function parseCoreReps(target){ const m=String(target||'').match(/\d+/); return m?m[0]:''; }
 function coreRowHTML(ei,si,target='',reps='',done=false){
-  return `<div class="coreRow gridCore" data-core="${ei}" data-set="${si}"><div class="setno">${si+1}</div><div><label>Target</label><input class="core-target" value="${esc(target)}"></div><div><label>Reps / sec</label><input class="core-reps" type="number" inputmode="decimal" value="${esc(reps)}"></div><label class="check"><input class="core-done" type="checkbox" ${done?'checked':''}></label></div>`;
+  return `<div class="coreRow gridCore" data-core="${ei}" data-set="${si}" data-target-edited="false" data-reps-edited="false"><div class="setno">${si+1}</div><div><label>Target</label><input class="core-target" value="${esc(target)}"><div class="miniNote">${si===0?'':'same target'}</div></div><div><label>Reps / sec</label><input class="core-reps" type="number" inputmode="decimal" value="${esc(reps)}"><div class="miniNote">${si===0?'':'same reps'}</div></div><label class="check"><input class="core-done" type="checkbox" ${done?'checked':''}></label></div>`;
 }
 function renderAddExerciseSelect(routineData){
   const names=Object.keys(EXERCISE_DB).filter(n=>isAppropriateForDay(n,routineData)).sort();
@@ -459,9 +487,9 @@ function bindInputs(){
   $$('.moveUpBtn').forEach(btn=>btn.addEventListener('click',()=>moveExercise(Number(btn.dataset.ex),-1)));
   $$('.moveDownBtn').forEach(btn=>btn.addEventListener('click',()=>moveExercise(Number(btn.dataset.ex),1)));
   $$('.coreGuideBtn').forEach(btn=>btn.addEventListener('click',()=>{$(`coreGuide-${btn.dataset.core}`).classList.toggle('show');}));
-  $$('.coreAddSetBtn').forEach(btn=>btn.addEventListener('click',()=>{addSetToCore(Number(btn.dataset.core)); saveDraftSoon(); enhanceInteractions();}));
+  $$('.coreAddSetBtn').forEach(btn=>btn.addEventListener('click',()=>{addSetToCore(Number(btn.dataset.core)); updateCoreTemplateFromUI(); saveDraftSoon(); enhanceInteractions();}));
   $$('.coreRemoveSetBtn').forEach(btn=>btn.addEventListener('click',()=>removeSetFromCore(Number(btn.dataset.core))));
-  $$('.core-target,.core-reps,.core-done').forEach(el=>el.addEventListener('input',saveDraftSoon));
+  $$('.coreRow').forEach(bindCoreRow);
   $('skipCoreInput').addEventListener('change',()=>{ $('coreList').style.display=$('skipCoreInput').checked?'none':'block'; saveDraftSoon(); });
   $('notesInput').addEventListener('input',saveDraftSoon);
   enhanceInteractions();
@@ -484,6 +512,54 @@ function bindRow(row){
   weightInput.addEventListener('input', function(){ const r=this.closest('.setrow'); const exercise=this.closest('.exercise'); const setIndex=Number(r.dataset.set); if(setIndex===0){syncFirstSetWeight(exercise,this.value);} else {r.dataset.weightEdited='true';} saveDraftSoon(); });
   repsInput.addEventListener('input', function(){ const r=this.closest('.setrow'); const exercise=this.closest('.exercise'); const setIndex=Number(r.dataset.set); if(setIndex===0){syncFirstSetReps(exercise,this.value);} else {r.dataset.repsEdited='true';} saveDraftSoon(); });
   doneInput.addEventListener('input',saveDraftSoon);
+}
+function bindCoreRow(row){
+  const targetInput=row.querySelector('.core-target'), repsInput=row.querySelector('.core-reps'), doneInput=row.querySelector('.core-done');
+  targetInput.addEventListener('input', function(){
+    const r=this.closest('.coreRow'); const coreEl=this.closest('.coreExercise'); const setIndex=Number(r.dataset.set);
+    if(setIndex===0){ syncFirstCoreTarget(coreEl,this.value); } else { r.dataset.targetEdited='true'; }
+    updateCoreTemplateFromUI(); saveDraftSoon();
+  });
+  repsInput.addEventListener('input', function(){
+    const r=this.closest('.coreRow'); const coreEl=this.closest('.coreExercise'); const setIndex=Number(r.dataset.set);
+    if(setIndex===0){ syncFirstCoreReps(coreEl,this.value); } else { r.dataset.repsEdited='true'; }
+    updateCoreTemplateFromUI(); saveDraftSoon();
+  });
+  doneInput.addEventListener('input',saveDraftSoon);
+}
+function coreNoteFor(row,kind){ const notes=row.querySelectorAll('.miniNote'); return kind==='target'?notes[0]:notes[1]; }
+function syncFirstCoreTarget(coreEl,value){
+  coreEl.querySelectorAll('.coreRow').forEach(row=>{
+    if(Number(row.dataset.set)===0)return;
+    if(row.dataset.targetEdited!=='true'){
+      row.querySelector('.core-target').value=value;
+      const n=coreNoteFor(row,'target'); if(n) n.textContent='same target';
+    }
+  });
+}
+function syncFirstCoreReps(coreEl,value){
+  coreEl.querySelectorAll('.coreRow').forEach(row=>{
+    if(Number(row.dataset.set)===0)return;
+    if(row.dataset.repsEdited!=='true'){
+      row.querySelector('.core-reps').value=value;
+      const n=coreNoteFor(row,'reps'); if(n) n.textContent='same reps';
+    }
+  });
+}
+function applyCoreSyncFlagsAfterRestore(coreEl){
+  const rows=Array.from(coreEl.querySelectorAll('.coreRow'));
+  if(!rows.length) return;
+  const firstT=rows[0].querySelector('.core-target')?.value ?? '';
+  const firstR=rows[0].querySelector('.core-reps')?.value ?? '';
+  rows.forEach((row,idx)=>{
+    if(idx===0){ row.dataset.targetEdited='false'; row.dataset.repsEdited='false'; return; }
+    const t=row.querySelector('.core-target')?.value ?? '';
+    const r=row.querySelector('.core-reps')?.value ?? '';
+    row.dataset.targetEdited = String(t)!==String(firstT) ? 'true' : 'false';
+    row.dataset.repsEdited = String(r)!==String(firstR) ? 'true' : 'false';
+    const tn=coreNoteFor(row,'target'); if(tn && row.dataset.targetEdited==='false') tn.textContent='same target';
+    const rn=coreNoteFor(row,'reps'); if(rn && row.dataset.repsEdited==='false') rn.textContent='same reps';
+  });
 }
 function addSetToExercise(ei, initialWeight=null, initialReps=null, initialDone=false){
   const exercise=document.querySelector(`.exercise[data-exercise-index="${ei}"]`); if(!exercise) return null;
@@ -512,14 +588,15 @@ function renumberCoreSets(coreEl){
 function addSetToCore(ci, target=null, reps=null, done=false){
   const coreEl=document.querySelector(`.coreExercise[data-core-index="${ci}"]`); if(!coreEl) return null;
   const rows=Array.from(coreEl.querySelectorAll('.coreRow')); const first=rows[0]; const si=rows.length;
-  const t=target!==null?target:(first?first.querySelector('.core-target').value:(CORE_DEFAULT[ci]?.target||''));
-  const r=reps!==null?reps:(first?first.querySelector('.core-reps').value:parseCoreReps(t));
+  const t=target!==null?target:(first?first.querySelector('.core-target').value:(coreTemplate[ci]?.target||CORE_DEFAULT[ci]?.target||''));
+  const r=reps!==null?reps:(first?first.querySelector('.core-reps').value:(coreTemplate[ci]?.reps||parseCoreReps(t)));
   const controls=coreEl.querySelector('.setControlRow');
   controls.insertAdjacentHTML('beforebegin',coreRowHTML(ci,si,t,r,!!done));
   const row=coreEl.querySelector(`.coreRow[data-core="${ci}"][data-set="${si}"]`);
-  row.querySelectorAll('.core-target,.core-reps,.core-done').forEach(el=>el.addEventListener('input',saveDraftSoon));
+  bindCoreRow(row);
   renumberCoreSets(coreEl);
-  setMessage('Core set added.');
+  updateCoreTemplateFromUI();
+  setMessage('Core set added. Future core workouts will use this set count.');
   return row;
 }
 function removeSetFromCore(ci){
@@ -528,8 +605,9 @@ function removeSetFromCore(ci){
   if(rows.length<=1){ setMessage('At least one core set must remain.','warn'); return; }
   rows[rows.length-1].remove();
   renumberCoreSets(coreEl);
+  updateCoreTemplateFromUI();
   saveDraftSoon();
-  setMessage('Core set removed.');
+  setMessage('Core set removed. Future core workouts will use this set count.');
 }
 function noteFor(row,kind){
   const notes=row.querySelectorAll('.miniNote');
@@ -615,12 +693,20 @@ function fillFromLog(log){
     });
   });
   document.querySelectorAll('.exercise').forEach(applySyncFlagsAfterRestore);
-  (log.core||[]).forEach((c,ci)=>{ (c.sets||[]).forEach((s,si)=>{ let row=document.querySelector(`.coreRow[data-core="${ci}"][data-set="${si}"]`); if(!row){ row=addSetToCore(ci,s.target||'',s.reps||parseCoreReps(s.target||''),!!s.done); } if(row){ row.querySelector('.core-target').value=s.target||''; row.querySelector('.core-reps').value=s.reps||parseCoreReps(s.target||''); row.querySelector('.core-done').checked=!!s.done; } }); const coreEl=document.querySelector(`.coreExercise[data-core-index="${ci}"]`); if(coreEl) renumberCoreSets(coreEl); });
+  (log.core||[]).forEach((c,ci)=>{
+    const coreEl=document.querySelector(`.coreExercise[data-core-index="${ci}"]`); if(!coreEl) return;
+    const sets = c.sets || [];
+    while(coreEl.querySelectorAll('.coreRow').length < sets.length){ addSetToCore(ci); }
+    while(coreEl.querySelectorAll('.coreRow').length > Math.max(sets.length,1)){ const rows=Array.from(coreEl.querySelectorAll('.coreRow')); rows[rows.length-1].remove(); }
+    sets.forEach((s,si)=>{ let row=document.querySelector(`.coreRow[data-core="${ci}"][data-set="${si}"]`); if(row){ row.querySelector('.core-target').value=s.target||''; row.querySelector('.core-reps').value=s.reps||parseCoreReps(s.target||''); row.querySelector('.core-done').checked=!!s.done; } });
+    renumberCoreSets(coreEl); applyCoreSyncFlagsAfterRestore(coreEl);
+  });
 }
 function collectLog(freshId=true){
   const p=currentProgram(), routine=$('routineSelect').value, date=$('dateInput').value||localDate(); const routineData=currentRoutines()[routine]||[];
   const exercises=routineData.map((exObj,ei)=>{ const setRows=$$(`.setrow[data-ex="${ei}"]`).map(row=>({weight:num(row.querySelector('.set-weight').value), reps:num(row.querySelector('.set-reps').value), done:row.querySelector('.set-done').checked})); const doneSets=setRows.filter(s=>s.done); const volume=doneSets.reduce((a,s)=>a+s.weight*s.reps,0); const bestWeight=doneSets.length?doneSets.reduce((a,s)=>Math.max(a,s.weight),0):setRows.reduce((a,s)=>Math.max(a,s.weight),0); const bestReps=doneSets.length?doneSets.reduce((a,s)=>Math.max(a,s.reps),0):setRows.reduce((a,s)=>Math.max(a,s.reps),0); return {name:exObj.name,cue:exObj.cue,sets:setRows,volume,bestWeight,bestReps}; });
-  const coreSkipped=$('skipCoreInput').checked; const core=CORE_DEFAULT.map((c,ci)=>({name:c.name,sets:$$(`.coreRow[data-core="${ci}"]`).map(row=>({target:row.querySelector('.core-target').value,reps:num(row.querySelector('.core-reps')?.value),done:row.querySelector('.core-done').checked}))}));
+  updateCoreTemplateFromUI();
+  const coreSkipped=$('skipCoreInput').checked; const core=coreTemplate.map((c,ci)=>({name:c.name,sets:$$(`.coreRow[data-core="${ci}"]`).map(row=>({target:row.querySelector('.core-target').value,reps:num(row.querySelector('.core-reps')?.value),done:row.querySelector('.core-done').checked}))}));
   const totalVolume=exercises.reduce((a,e)=>a+(e.volume||0),0); const totalSets=exercises.reduce((a,e)=>a+(e.sets||[]).filter(s=>s.done).length,0);
   return {id:freshId?Date.now():0, date, program:p, routine, exercises, coreSkipped, core, notes:$('notesInput').value.trim(), totalVolume, totalSets};
 }
